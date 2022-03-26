@@ -195,7 +195,7 @@ while True:
         if vals1[0] > 0:
             for x in range(1,vals1[0]+1):
                 StylevarInput.append(sg.Text('Stylevar label %s' %x))
-                StylevarInput.append(sg.Input(size=(10,1)))
+                StylevarInput.append(sg.Input(default_text="cs:", size=(10,1)))
 
                 ListInputLabels.append(sg.Text("Stylevar %s" %x, size=(20,1)))
                 ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20))]]))
