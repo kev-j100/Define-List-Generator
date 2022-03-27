@@ -187,18 +187,18 @@ while True:
         win2_active = True
         window1.Hide()
 
-        NormalLabelsInput = [sg.Text('Define List Label'), sg.Input(size=(10,1)),sg.Text('Label Prefix'), sg.Input(size=(10,1))]
+        NormalLabelsInput = [sg.Text('Define List Label'), sg.Input(size=(10,1), key="DLLabel"),sg.Text('Label Prefix'), sg.Input(size=(10,1), key="LabelPre", default_text="r")]
         StylevarInput = []
         ListInputLabels = [sg.Text("Row Text List", size=(20,1)), sg.Text("Stylevar 1", size=(20,1))]
-        ListInputs = [sg.Col([[sg.Text("Row Text List")],[sg.Multiline(size = (20,20))]])]
+        ListInputs = [sg.Col([[sg.Text("Row Text List")],[sg.Multiline(size = (20,20), key="RowText")]])]
 
         if vals1[0] > 0:
             for x in range(1,vals1[0]+1):
                 StylevarInput.append(sg.Text('Stylevar label %s' %x))
-                StylevarInput.append(sg.Input(default_text="cs:", size=(10,1)))
+                StylevarInput.append(sg.Input(default_text="cs:", size=(10,1), key="StylevarLabel_%s" %x))
 
                 ListInputLabels.append(sg.Text("Stylevar %s" %x, size=(20,1)))
-                ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20))]]))
+                ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20), key="StylevarList_%s" %x)]]))
         
 
         ListInputLabels.append(sg.Text('Output', size=(20,1)))
@@ -213,16 +213,17 @@ while True:
         window2 = sg.Window('Define List With Stylevar Group', layout2)
         while True:
             ev2, vals2 = window2.read()
-    
-
 
             LabelsList = []
             ListsList= []
 
-            for x in range(0,vals1[0]+2):
-                LabelsList.append(vals2[x])
-            for x in range(vals1[0]+2,len(vals2)):
-                ListsList.append(vals2[x])
+            LabelsList.append(vals2['DLLabel'])
+            LabelsList.append(vals2['LabelPre'])
+            ListsList.append(vals2['RowText'])
+
+            for x in range(1,vals1[0]+1):
+                LabelsList.append(vals2['StylevarLabel_%s' %x])
+                ListsList.append(vals2['StylevarList_%s' %x])
 
             ListsToCheck = listOfStringsToListOfLists(ListsList)
 
