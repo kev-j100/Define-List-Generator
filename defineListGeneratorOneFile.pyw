@@ -32,34 +32,40 @@ def listOfStringsToListOfLists(ListStrings):
 
     return ListOfLists
 
-def defineListMakerStylevarGroup(LabelStrings, ListStrings):
+def defineListMakerStylevarGroup(LabelStrings, ListStrings, StartNum):
     RowTextSplit = []
     splitStylevars = []
     DefineListString = ''
-    
+    stylevarCleaned = []
+
     RowTextSplit = ListStrings[0].split('\n')
     
-    for x in ListStrings[1:]:
-        splitStylevars.append(x.split('\n'))
+    if len(ListStrings) > 1:
+        for x in ListStrings[1:]:
+            splitStylevars.append(x.split('\n'))
     
-    stylevarCleaned = []
-    for stylevarRow in range(0,len(splitStylevars[0])):
-        stylevarString = ''
-        for x,label in zip(range(0,len(LabelStrings[2:])),LabelStrings[2:]):
-            stylevarString += "%s='" %(label).strip()
-            stylevarString += "%s' " %splitStylevars[x][stylevarRow].replace('\t',',').strip()
-        stylevarCleaned.append(stylevarString)
+        for stylevarRow in range(0,len(splitStylevars[0])):
+            stylevarString = ''
+            for x,label in zip(range(0,len(LabelStrings[2:])),LabelStrings[2:]):
+                stylevarString += "%s='" %(label).strip()
+                stylevarString += "%s' " %splitStylevars[x][stylevarRow].replace('\t',',').strip()
+            stylevarCleaned.append(stylevarString)
 
     
-    for x in range(2,len(LabelStrings)):
-        DefineListString += "<stylevar name='%s'/>\n" %LabelStrings[x]
-
+        for x in range(2,len(LabelStrings)):
+            DefineListString += "<stylevar name='%s'/>\n" %LabelStrings[x]
+    else:
+        stylevarCleaned = RowTextSplit
+        
     DefineListString += "<define label='%s'>\n" %LabelStrings[0]
     
-    rowNum = 1
+    rowNum = StartNum
     for rowText,stylevar in zip(RowTextSplit,stylevarCleaned):
         if rowText != '':
-            DefineListString += ("<row label='%s%s' %s>%s</row>\n" %(LabelStrings[1],rowNum,stylevar,rowText.replace('&','&amp;').strip()))
+            if len(ListStrings) > 1:
+                DefineListString += ("<row label='%s%s' %s>%s</row>\n" %(LabelStrings[1],rowNum,stylevar,rowText.replace('&','&amp;').strip()))
+            else:
+                DefineListString += ("<row label='%s%s'>%s</row>\n" %(LabelStrings[1],rowNum,rowText.replace('&','&amp;').strip()))
             rowNum += 1
     DefineListString += "</define>"
 
@@ -131,130 +137,155 @@ def listLengthOutput(listsList):
     return listLengths
 
 
-layout = [[sg.Button('Simple Design List')],
- [sg.Button('Design List With Stylevar Group'), sg.Spin([i for i in range(1,11)], initial_value=1), sg.Text('Stylevar Number')]]
-window1 = sg.Window('Decipher Define List Generator Tool', layout)
-win2_active = False
+##
+## GUI side functions
+##
+##
 
+def windowLayoutCreation(StyleVarNum):
+
+
+    NormalLabelsInput = [sg.Text('Define List Label'), sg.Input(size=(10,1), key="DLLabel"),sg.Text('Label Prefix'), sg.Input(size=(10,1), key="LabelPre", default_text="r"), sg.Text('Row Start Number'), sg.Input(size=(10,1), key="StartNum", default_text="1")]
+    StylevarInput = []
+    ListInputs = [sg.Col([[sg.Text("Row Text List")],[sg.Multiline(size = (20,20), key="RowText")]])]
+
+    if StyleVarNum > 0:
+        for x in range(1,StyleVarNum+1):
+            StylevarInput.append(sg.Text('Stylevar label %s' %x))
+            StylevarInput.append(sg.Input(default_text="cs:", size=(10,1), key="StylevarLabel_%s" %x))
+            ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20), key="StylevarList_%s" %x)]]))
+        
+    StylevarInput.append(sg.Button('Add Stylevar'))
+    StylevarInput.append(sg.Button('Remove Stylevar'))
+    ListInputs.append(sg.Col([[sg.Text("Output")],[sg.Output(size = (20,20), key='-OUTOUT-')]]))
+
+    layoutReturn = [
+        NormalLabelsInput, 
+        StylevarInput,
+        ListInputs,
+        [sg.Button('Create'), sg.Button('Clear')], 
+        [sg.Button('Exit')]
+    ]
+
+    return layoutReturn
+
+#
+# GUI setup
+#
+#
+
+SVNum = 0
+
+window1 = sg.Window('Decipher Define List Generator Tool', windowLayoutCreation(SVNum))
+#win2_active = False
 
 while True:
     ev1, vals1 = window1.read(timeout=100)
     
-    if ev1 == sg.WIN_CLOSED:
-        break
+    if ev1 == 'Add Stylevar':
 
-####-------------------------------------------------------####
-# Creates a simple Design List
-#
-####-------------------------------------------------------####
-    if ev1 == 'Simple Design List' and not win2_active:
-        win2_active = True
-        
-        window1.Hide()
+        dLLabel = vals1['DLLabel']
+        LabelPre = vals1['LabelPre']
+        StartNum = vals1['StartNum']
+        RowText = vals1['RowText']
 
-        layout2 = [[sg.Text('Define List Label'), sg.Input(),sg.Text('Label Prefix'), sg.Input()],
-                [sg.Col([[sg.Text("Row Text List")],[sg.Multiline(size = (20,20))]]), sg.Col([[sg.Text("Output")],[sg.Output(size = (20,20), key='-OUTOUT-')]])],
-                [sg.Submit(), sg.Button('Clear')], 
-                [sg.Button('Exit')]]
-        
-        window2 = sg.Window('Simple Define List', layout2)
-        while True:
-            ev2, vals2 = window2.read()
-    
+        StyleVarLabels = []
+        StyleVarLists = []
+
+        if SVNum > 0:
+            for x in range(1,SVNum+1):
+                StyleVarLabels.append(vals1['StylevarLabel_%s' %x])
+                StyleVarLists.append(vals1['StylevarList_%s' %x])
+
+        SVNum += 1
+        window2 = sg.Window('Define List With Stylevar Group', windowLayoutCreation(SVNum), finalize=True)
+        window1.Close()
+        window1 = window2
+
+        window1['DLLabel'].update(dLLabel)
+        window1['LabelPre'].update(LabelPre)
+        window1['StartNum'].update(StartNum)
+        window1['RowText'].update(RowText)
+
+        if SVNum > 1:
+            for x in range(0,SVNum-1):
+                window1['StylevarLabel_%s' %(x+1)].update(StyleVarLabels[x])
+                window1['StylevarList_%s' %(x+1)].update(StyleVarLists[x])
+
+    elif ev1 == 'Remove Stylevar' and SVNum > 0:
+
+        dLLabel = vals1['DLLabel']
+        LabelPre = vals1['LabelPre']
+        StartNum = vals1['StartNum']
+        RowText = vals1['RowText']
+
+        StyleVarLabels = []
+        StyleVarLists = []
+
+        if SVNum > 0:
+            for x in range(1,SVNum+1):
+                StyleVarLabels.append(vals1['StylevarLabel_%s' %x])
+                StyleVarLists.append(vals1['StylevarList_%s' %x])
+
+        SVNum -= 1
+        window2 = sg.Window('Define List With Stylevar Group', windowLayoutCreation(SVNum), finalize=True)
+        window1.Close()
+        window1 = window2
+
+        window1['DLLabel'].update(dLLabel)
+        window1['LabelPre'].update(LabelPre)
+        window1['StartNum'].update(StartNum)
+        window1['RowText'].update(RowText)
+
+        if SVNum > 0:       
+            for x in range(0,SVNum-1):
+                window1['StylevarLabel_%s' %(x+1)].update(StyleVarLabels[x])
+                window1['StylevarList_%s' %(x+1)].update(StyleVarLists[x])
+
+    elif ev1 == 'Create':
+
+        LabelsList = []
+        ListsList= []
+
+        LabelsList.append(vals1['DLLabel'])
+        LabelsList.append(vals1['LabelPre'])
+        ListsList.append(vals1['RowText'])
+
+        if SVNum > 0:
+            for x in range(1,SVNum+1):
+                LabelsList.append(vals1['StylevarLabel_%s' %x])
+                ListsList.append(vals1['StylevarList_%s' %x])
+
+        ListsToCheck = listOfStringsToListOfLists(ListsList)
+
+        if SVNum > 0 and not listLengthCheck(ListsToCheck):
+            listLengths = listLengthOutput(ListsToCheck)
+
+            listLengthsString = ''
+            for x in listLengths:
+                listLengthsString += "%s" %x
+                listLengthsString += " "
+
+            sg.Popup('The Length of of the inputs are different. Please revise. Here are the lengths in order: %s' %listLengthsString)
+            
+        else:
+
             dupesForPopup = []
-            dupesForPopup = defineListDupesSingle(vals2[2])
+            dupesForPopup = defineListDupesSingle(ListsList[0])
 
             if len(dupesForPopup) > 0:
                 sg.Popup('There are some duplicates in the list')
 
-            text_input = defineListMakerSingle(vals2[2],vals2[0],vals2[1])
+        
+        
+            text_input = defineListMakerStylevarGroup(LabelsList,ListsList,int(vals1['StartNum']))        
             print (text_input)
 
-            if ev2 == 'Clear':
-                 window2['-OUTOUT-'].update('')
+    elif ev1 == 'Clear':
+        window1['-OUTOUT-'].update('')
 
-            if ev2 == sg.WIN_CLOSED or ev2 == 'Exit':
-                window2.close()
-                win2_active = False
-                window1.UnHide()
-                break
+    if ev1 == sg.WIN_CLOSED or ev1 == 'Exit':
+            break
 
-##### ------------------------------------------------------------- #####
-# Crates a Design list with any number of Stylevar
-# 
-#####---------------------------------------------------------------#####
-    elif ev1 == 'Design List With Stylevar Group' and not win2_active:
-        win2_active = True
-        window1.Hide()
-
-        NormalLabelsInput = [sg.Text('Define List Label'), sg.Input(size=(10,1), key="DLLabel"),sg.Text('Label Prefix'), sg.Input(size=(10,1), key="LabelPre", default_text="r")]
-        StylevarInput = []
-        ListInputLabels = [sg.Text("Row Text List", size=(20,1)), sg.Text("Stylevar 1", size=(20,1))]
-        ListInputs = [sg.Col([[sg.Text("Row Text List")],[sg.Multiline(size = (20,20), key="RowText")]])]
-
-        if vals1[0] > 0:
-            for x in range(1,vals1[0]+1):
-                StylevarInput.append(sg.Text('Stylevar label %s' %x))
-                StylevarInput.append(sg.Input(default_text="cs:", size=(10,1), key="StylevarLabel_%s" %x))
-
-                ListInputLabels.append(sg.Text("Stylevar %s" %x, size=(20,1)))
-                ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20), key="StylevarList_%s" %x)]]))
-        
-
-        ListInputLabels.append(sg.Text('Output', size=(20,1)))
-        ListInputs.append(sg.Col([[sg.Text("Output")],[sg.Output(size = (20,20), key='-OUTOUT-')]]))
-
-        layout2 = [ NormalLabelsInput, 
-        StylevarInput,
-        ListInputs,
-        [sg.Submit(), sg.Button('Clear')], 
-        [sg.Button('Exit')]]
-
-        window2 = sg.Window('Define List With Stylevar Group', layout2)
-        while True:
-            ev2, vals2 = window2.read()
-
-            LabelsList = []
-            ListsList= []
-
-            LabelsList.append(vals2['DLLabel'])
-            LabelsList.append(vals2['LabelPre'])
-            ListsList.append(vals2['RowText'])
-
-            for x in range(1,vals1[0]+1):
-                LabelsList.append(vals2['StylevarLabel_%s' %x])
-                ListsList.append(vals2['StylevarList_%s' %x])
-
-            ListsToCheck = listOfStringsToListOfLists(ListsList)
-
-            if not listLengthCheck(ListsToCheck):
-                listLengths = listLengthOutput(ListsToCheck)
-
-                listLengthsString = ''
-                for x in listLengths:
-                    listLengthsString += "%s" %x
-                    listLengthsString += " "
-
-                sg.Popup('The Length of of the inputs are different. Please revise. Here are the lengths in order: %s' %listLengthsString)
-            
-            else:
-
-                dupesForPopup = []
-                dupesForPopup = defineListDupesSingle(ListsList[0])
-
-                if len(dupesForPopup) > 0:
-                    sg.Popup('There are some duplicates in the list')
-
-                text_input = defineListMakerStylevarGroup(LabelsList,ListsList)
-                print (text_input)
-
-            if ev2 == 'Clear':
-                 window2['-OUTOUT-'].update('')
-
-            if ev2 == sg.WIN_CLOSED or ev2 == 'Exit':
-                window2.close()
-                win2_active = False
-                window1.UnHide()
-                break
 
 window1.close()
