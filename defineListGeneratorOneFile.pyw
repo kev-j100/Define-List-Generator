@@ -25,6 +25,7 @@ def defineListMakerSingle(rowsString, defineLabelString, rowLabelString):
 
     return DefineListString
 
+# Takes in a list of strings and returns a list of lists
 def listOfStringsToListOfLists(ListStrings):
     ListOfLists = []
     for x in ListStrings:
@@ -38,11 +39,12 @@ def defineListMakerStylevarGroup(LabelStrings, ListStrings, StartNum):
     DefineListString = ''
     stylevarCleaned = []
 
-    RowTextSplit = ListStrings[0].split('\n')
-    
+#    RowTextSplit = ListStrings[0].split('\n')
+    RowTextSplit = ListStrings[0]
+
     if len(ListStrings) > 1:
         for x in ListStrings[1:]:
-            splitStylevars.append(x.split('\n'))
+            splitStylevars.append(x)
     
         for stylevarRow in range(0,len(splitStylevars[0])):
             stylevarString = ''
@@ -136,6 +138,30 @@ def listLengthOutput(listsList):
 
     return listLengths
 
+### Takes in a list of lists. Returns a list of Lists with a deduped text list and combined stylevar list
+def colapseList(listsList):
+
+    #Creates new List of lists and adds in the number of lists needed
+    ColapsedList = []
+    
+    for list in listsList:
+        ColapsedList.append([])
+
+    #Add values to the new list of lists
+    for rowTextNum in range(0,len(listsList[0])):
+        #Check if row text has been added yet. If it has not then add it in.
+        if not listsList[0][rowTextNum] in ColapsedList[0]:
+            for listNum in range(0,len(listsList)):
+                ColapsedList[listNum].append(listsList[listNum][rowTextNum])
+        #If the row text has been already added, then the stylevars values need to be added to the existing ones.
+        if (listsList[0][rowTextNum] in ColapsedList[0]) and len(listsList) > 1:
+            for colListRowNum in range(0,len(ColapsedList[0])):
+                if listsList[0][rowTextNum] == ColapsedList[0][colListRowNum]:
+                    for styleVarNum in range(1,len(listsList)):
+                        if not listsList[styleVarNum][rowTextNum] in ColapsedList[styleVarNum][colListRowNum]:
+                            ColapsedList[styleVarNum][colListRowNum] += "," + listsList[styleVarNum][rowTextNum]
+
+    return ColapsedList
 
 ##
 ## GUI side functions
@@ -272,12 +298,13 @@ while True:
 
             dupesForPopup = []
             dupesForPopup = defineListDupesSingle(ListsList[0])
-
+            
+            ListsList = listOfStringsToListOfLists(ListsList)
             if len(dupesForPopup) > 0:
-                sg.Popup('There are some duplicates in the list')
+                if sg.popup_yes_no('There are some duplicates in the Row Text List. Do you want to dedupe and/or colapse the lists?',) == 'Yes':
+                # Colapse the lists
+                    ListsList = colapseList(ListsList)
 
-        
-        
             text_input = defineListMakerStylevarGroup(LabelsList,ListsList,int(vals1['StartNum']))        
             print (text_input)
 
