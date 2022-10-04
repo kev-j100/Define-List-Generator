@@ -189,7 +189,7 @@ def windowLayoutCreation(StyleVarNum):
         NormalLabelsInput, 
         StylevarInput,
         ListInputs,
-        [sg.Button('Create'), sg.Button('Clear')], 
+        [sg.Button('Create'), sg.Button('Clear'), sg.Button('Save to file')], 
         [sg.Button('Exit')]
     ]
 
@@ -204,6 +204,8 @@ SVNum = 0
 
 window1 = sg.Window('Decipher Define List Generator Tool', windowLayoutCreation(SVNum))
 #win2_active = False
+ListOutput = ''
+
 
 while True:
     ev1, vals1 = window1.read(timeout=100)
@@ -306,7 +308,17 @@ while True:
                     ListsList = colapseList(ListsList)
 
             text_input = defineListMakerStylevarGroup(LabelsList,ListsList,int(vals1['StartNum']))        
+            ListOutput = text_input
             print (text_input)
+
+    elif ev1 == 'Save to file':
+        saveFileName = ''
+        saveFileName = sg.popup_get_file('Please enter a file name')
+        
+        if saveFileName not in  ['',None]:
+            saveFile = open(saveFileName, 'w')
+            saveFile.writelines(ListOutput)
+            saveFile.close()
 
     elif ev1 == 'Clear':
         window1['-OUTOUT-'].update('')
