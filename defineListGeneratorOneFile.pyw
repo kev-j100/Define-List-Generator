@@ -1,3 +1,4 @@
+from hashlib import new
 import PySimpleGUI as sg
 import csv
 
@@ -91,6 +92,15 @@ def defineListDupesSingle(rowsString):
 
     return dupesCollection
 
+# Takes in a list with duplicate items and returns a deduped list
+def returnDedupedList(dupeList):
+    dedupedList = []
+    for x in dupeList:
+        if x not in dedupedList:
+            dedupedList.append(x)
+
+    return dedupedList
+
 # Takes the file name, opens the file, and adds elements of the file to a list.
 # This should be either a list for a single row or a list of lists a file with more than one column.
 def fileToLists(fileName):
@@ -179,7 +189,7 @@ def windowLayoutCreation(StyleVarNum):
         for x in range(1,StyleVarNum+1):
             StylevarInput.append(sg.Text('Stylevar label %s' %x))
             StylevarInput.append(sg.Input(default_text="cs:", size=(10,1), key="StylevarLabel_%s" %x))
-            ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20), key="StylevarList_%s" %x)]]))
+            ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20), key="StylevarList_%s" %x)], [sg.Button("Replace Text", key="StyleVarReplace_%s" %x)]]))
         
     StylevarInput.append(sg.Button('Add Stylevar'))
     StylevarInput.append(sg.Button('Remove Stylevar'))
@@ -195,6 +205,47 @@ def windowLayoutCreation(StyleVarNum):
 
     return layoutReturn
 
+###
+##  Text replace stylevar items. 
+##  Takes in all of the chosen stylevar string list, makes a dictionary of item, 
+##  and outputs a string to replace the current string list
+###
+
+def createReplaceSylevarValue(originalString):
+    #Change string to list
+    originalStringList = []
+    originalStringList = originalString.split('\n')
+
+    #Dedupe the list
+    dedupedList = []
+    dedupedList = returnDedupedList(originalStringList)
+
+    #Create window with inputs for each deduped item
+    StyleVarItems = []
+
+    for svitem in dedupedList:
+        StyleVarItems.append([sg.Text(svitem), sg.Input(size=(10,1), key=svitem, default_text=svitem)])
+    
+    StyleVarItems.append([sg.Button('Replace'), sg.Button('Cancel')])
+    replacementWindow = sg.Window('Replace Text', StyleVarItems)
+
+    newStringList = []
+    while True:
+        repev, repvals = replacementWindow.read(timeout=100)
+
+        
+    #On completion close the window and update the stylevar
+        if repev == 'Replace':
+            for x in originalStringList:
+                newStringList.append(repvals[x])
+            break
+
+        elif repev == 'Cancel' or repev == sg.WIN_CLOSED or repev == 'Exit':
+            break
+
+    replacementWindow.close()
+
+    return newStringList
 #
 # GUI setup
 #
@@ -315,10 +366,18 @@ while True:
         saveFileName = ''
         saveFileName = sg.popup_get_file('Please enter a file name')
         
-        if saveFileName not in  ['',None]:
+        if saveFileName not in ['',None]:
             saveFile = open(saveFileName, 'w')
             saveFile.writelines(ListOutput)
             saveFile.close()
+    
+    elif 'StyleVarReplace_' in ev1:
+        stylevarNum = ev1
+        replacementStyleVarList = []
+        replacementStyleVarList = createReplaceSylevarValue(vals1["StylevarList_%s" %stylevarNum.split('_')[1]])
+        
+        if len(replacementStyleVarList) > 0:
+            window1["StylevarList_%s" %stylevarNum.split('_')[1]].update('\n'.join(replacementStyleVarList))
 
     elif ev1 == 'Clear':
         window1['-OUTOUT-'].update('')
