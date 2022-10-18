@@ -1,6 +1,8 @@
 from hashlib import new
+from logging import exception
 import PySimpleGUI as sg
 import csv
+import pathlib
 
 #------
 #This program is for generating define lists used
@@ -367,9 +369,16 @@ while True:
         saveFileName = sg.popup_get_file('Please enter a file name')
         
         if saveFileName not in ['',None]:
-            saveFile = open(saveFileName, 'w')
-            saveFile.writelines(ListOutput)
-            saveFile.close()
+            #print(saveFileName)
+            try:
+                if '/' in saveFileName or '\\' in saveFileName:
+                     saveFile = open( saveFileName, 'w+')                   
+                else:
+                    saveFile = open( '%s/%s' %(pathlib.Path().absolute(),saveFileName), 'w+')
+                saveFile.writelines(ListOutput)
+                saveFile.close()
+            except:
+                print(exception)
     
     elif 'StyleVarReplace_' in ev1:
         stylevarNum = ev1
