@@ -185,23 +185,28 @@ def windowLayoutCreation(StyleVarNum):
 
     NormalLabelsInput = [sg.Text('Define List Label'), sg.Input(size=(10,1), key="DLLabel"),sg.Text('Label Prefix'), sg.Input(size=(10,1), key="LabelPre", default_text="r"), sg.Text('Row Start Number'), sg.Input(size=(10,1), key="StartNum", default_text="1")]
     StylevarInput = []
-    ListInputs = [sg.Col([[sg.Text("Row Text List")],[sg.Multiline(size = (20,20), key="RowText")]])]
+    ListInputs = [sg.Col([[sg.Text("Row Text List")],
+    [sg.Multiline(size = (20,20), key="RowText")],
+    [sg.Button('Clear Row Text', key='Clear_RowText')]])]
 
     if StyleVarNum > 0:
         for x in range(1,StyleVarNum+1):
-            StylevarInput.append(sg.Text('Stylevar label %s' %x))
-            StylevarInput.append(sg.Input(default_text="cs:", size=(10,1), key="StylevarLabel_%s" %x))
-            ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],[sg.Multiline(size = (20,20), key="StylevarList_%s" %x)], [sg.Button("Replace Text", key="StyleVarReplace_%s" %x)]]))
+
+            ListInputs.append(sg.Col([[sg.Text("Stylevar %s" %x)],
+            [sg.Input(default_text="cs:", size=(10,1), key="StylevarLabel_%s" %x)],
+            [sg.Multiline(size = (20,20), key="StylevarList_%s" %x)], 
+            [sg.Button("Replace Text", key="StyleVarReplace_%s" %x)],
+            [sg.Button( 'Clear Stylevar List %s' %x, key='Clear_StylevarList_%s' %x)]]))
         
     StylevarInput.append(sg.Button('Add Stylevar'))
     StylevarInput.append(sg.Button('Remove Stylevar'))
-    ListInputs.append(sg.Col([[sg.Text("Output")],[sg.Output(size = (20,20), key='-OUTOUT-')]]))
+    ListInputs.append(sg.Col([[sg.Text("Output")],[sg.Output(size = (20,20), key='Output')],
+    [sg.Button('Create')],[sg.Button('Save to file')],[sg.Button('Clear Output', key="Clear_Output")]]))
 
     layoutReturn = [
         NormalLabelsInput, 
         StylevarInput,
         ListInputs,
-        [sg.Button('Create'), sg.Button('Clear'), sg.Button('Save to file')], 
         [sg.Button('Exit')]
     ]
 
@@ -366,7 +371,7 @@ while True:
 
     elif ev1 == 'Save to file':
         saveFileName = ''
-        saveFileName = sg.popup_get_file('Please enter a file name')
+        saveFileName = sg.popup_get_file('Please enter a file name', save_as=True)
         
         if saveFileName not in ['',None]:
             #print(saveFileName)
@@ -387,9 +392,13 @@ while True:
         
         if len(replacementStyleVarList) > 0:
             window1["StylevarList_%s" %stylevarNum.split('_')[1]].update('\n'.join(replacementStyleVarList))
+    
+    elif 'Clear_' in ev1:
+        columnName = ev1.removeprefix('Clear_')
+        window1[columnName].update('')
 
-    elif ev1 == 'Clear':
-        window1['-OUTOUT-'].update('')
+    #elif ev1 == 'Clear':
+    #    window1['-OUTOUT-'].update('')
 
     if ev1 == sg.WIN_CLOSED or ev1 == 'Exit':
             break
